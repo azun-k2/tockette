@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ 菜单栏下拉一拖即设 · 悦耳柔和的原生提示音</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">从菜单栏轻轻一拖，计时器就开始了。</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="交互式演示：圆环倒计时与快速预设时长选择">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">深度专注</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">开始计时</button>
+      <button id="tkResetBtn" class="app-chip">重置</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="深度专注">🍅 25分钟 专注</button>
+      <button class="app-chip" data-m="5" data-l="短暂小憩">☕ 5分钟 休息</button>
+      <button class="app-chip" data-m="3" data-l="冲泡好茶">🫖 3分钟 泡茶</button>
+    </div>
+    <span class="demo-hint">💡 点击开始计时观察环形倒计时动画，或选择快捷时长</span>
+  </div>
+  <p class="demo-note">此为网页交互演示。在 Mac 客户端中，直接从菜单栏向下一拉，1 秒即可开始倒计时。</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "暂停";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "时间到！"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "开始计时";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "开始计时"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">需要 macOS 14 Sonoma 或更高版本。</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>笨重繁琐的计时软件与 Tockette 的对比</h2>
+  <p class="section-lead">无需打断思考与专注，2 秒以内随时随地随手开启倒计时。</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>特性</th>
+          <th>传统计时器</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>设定时间</strong></td>
+          <td>需打开巨大窗口，在小小的时分秒输入框与箭头中翻找</td>
+          <td class="highlight-col"><strong>只需从菜单栏图标直接往下一拉，如拉尺子般丝滑直达</strong></td>
+        </tr>
+        <tr>
+          <td><strong>余量一览</strong></td>
+          <td>缩在 Dock 栏看不到，或弹窗遮挡工作桌面空间</td>
+          <td class="highlight-col"><strong>菜单栏常驻极其紧凑的饼图进度环，余量一目了然</strong></td>
+        </tr>
+        <tr>
+          <td><strong>提醒声音</strong></td>
+          <td>刺耳突兀的闹钟蜂鸣，令人心惊肉跳并干扰线上会议</td>
+          <td class="highlight-col"><strong>清脆优美的合成和弦钟声，温和提醒绝不突兀惊扰</strong></td>
+        </tr>
+        <tr>
+          <td><strong>自然语言</strong></td>
+          <td>死板刻板的时:分:秒表单格式</td>
+          <td class="highlight-col"><strong>支持随手键入如 '25 泡茶' 或 '15 洗衣' 快捷标签</strong></td>
+        </tr>
+        <tr>
+          <td><strong>资源占用</strong></td>
+          <td>占用数百兆内存与臃肿跨平台渲染的 Electron 框架</td>
+          <td class="highlight-col"><strong>纯原生 Swift macOS 打造：瞬时冷启动，内存微乎其微</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>一段话说清隐私</h2>
   <p>Tockette 不访问网络，无需账户，也没有跟踪。你的计时器和它们的名称都留在你的 Mac 上。完整的<a href="privacy.html">隐私政策</a>说的也是这些，只是更详细。</p>

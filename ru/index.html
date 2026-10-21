@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Одно движение из строки меню · Мягкий нативный звон колокольчика</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">Таймер — одно движение от строки меню.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="Интерактивная демонстрация: круговой таймер и выбор времени">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">Фокус-сессия</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">Старт таймера</button>
+      <button id="tkResetBtn" class="app-chip">Сброс</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="Фокус-сессия">🍅 25м Фокус</button>
+      <button class="app-chip" data-m="5" data-l="Короткий перерыв">☕ 5м Отдых</button>
+      <button class="app-chip" data-m="3" data-l="Заварить чай">🫖 3м Чай</button>
+    </div>
+    <span class="demo-hint">💡 Нажмите Старт, чтобы увидеть круговой отсчет, или выберите время</span>
+  </div>
+  <p class="demo-note">Визуальная симуляция. В приложении для Mac достаточно потянуть курсором вниз из строки меню, чтобы за секунду выставить таймер.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "Пауза";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "Готово!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "Старт таймера";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "Старт таймера"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">Требуется macOS 14 Sonoma или новее.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Громоздкие таймеры в сравнении с Tockette</h2>
+  <p class="section-lead">Запускайте таймер быстрее чем за две секунды, не отвлекаясь от рабочего потока.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Критерий</th>
+          <th>Обычные таймеры</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Установка времени</strong></td>
+          <td>Открытие громоздких окон, клики по крошечным стрелкам</td>
+          <td class="highlight-col"><strong>Одно плавное движение вниз прямо из строки меню</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Быстрый взгляд</strong></td>
+          <td>Спрятан в Dock или занимает место посреди рабочего стола</td>
+          <td class="highlight-col"><strong>Аккуратная круговая диаграмма прямо в строке меню</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Звук сигнала</strong></td>
+          <td>Резкие раздражающие звонки, которые пугают вас и коллег в звонках</td>
+          <td class="highlight-col"><strong>Мягкий гармоничный аккорд колокольчика без испуга</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Быстрый ввод</strong></td>
+          <td>Неудобные поля ввода часов, минут и секунд</td>
+          <td class="highlight-col"><strong>Просто введите '25 чай' или '15 стирка'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Потребление памяти</strong></td>
+          <td>Тяжелые веб-оболочки, отнимающие сотни мегабайт ОЗУ</td>
+          <td class="highlight-col"><strong>Чистый нативный код на Swift для macOS: мгновенный и легкий</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Конфиденциальность в одном абзаце</h2>
   <p>У Tockette нет доступа к сети, учётной записи и слежки. Ваши таймеры и их названия остаются на вашем Mac. Полная <a href="privacy.html">политика конфиденциальности</a> говорит то же самое, только подробнее.</p>

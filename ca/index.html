@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Un sol gest cap avall a la barra de menús · So nadiu suau</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">Un temporitzador a un sol gest de la barra de menús.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="Demostració interactiva: compte enrere circular i selecció de predefinits">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">Sessió de concentració</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">Iniciar temporitzador</button>
+      <button id="tkResetBtn" class="app-chip">Reiniciar</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="Sessió de concentració">🍅 25m Focus</button>
+      <button class="app-chip" data-m="5" data-l="Descans curt">☕ 5m Descans</button>
+      <button class="app-chip" data-m="3" data-l="Infusionar te">🫖 3m Te</button>
+    </div>
+    <span class="demo-hint">💡 Feu clic a Iniciar per veure l'anell o trieu un predefinit</span>
+  </div>
+  <p class="demo-note">Simulació visual. A l’app per a Mac, arrossegueu directament des de la barra de menús per establir el temps en un segon.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "Pausar";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "Fet!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "Iniciar temporitzador";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "Iniciar temporitzador"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">Requereix macOS 14 Sonoma o posterior.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Apps de temporitzador feixugues davant de Tockette</h2>
+  <p class="section-lead">Activeu un temporitzador en menys de dos segons sense interrompre la vostra feina.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspecte</th>
+          <th>Apps convencionals</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Ajustar l'hora</strong></td>
+          <td>Obrir finestres grans, tocar fletxes petites o desplegables</td>
+          <td class="highlight-col"><strong>Un sol moviment fluid cap avall des de la barra de menús</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Cop d'ull</strong></td>
+          <td>Amagat al Dock o ocupant espai a l'escriptori</td>
+          <td class="highlight-col"><strong>Un cercle discret a la barra de menús visible d'un cop d'ull</strong></td>
+        </tr>
+        <tr>
+          <td><strong>So d'alarma</strong></td>
+          <td>Sons d'alarma estridents que us espanten i molesten les trucades</td>
+          <td class="highlight-col"><strong>Un carilló suau i harmònic que avisa sense sobresalts</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Text natural</strong></td>
+          <td>Formularis rígids d'hores, minuts i segons</td>
+          <td class="highlight-col"><strong>Podeu escriure directament '25 te' o '15 rentadora'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Consum</strong></td>
+          <td>Marcs feixucs que consumeixen centenars de megabytes</td>
+          <td class="highlight-col"><strong>Aplicació nativa Swift per a macOS: instantània i lleugera</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>La privadesa en un paràgraf</h2>
   <p>Tockette no té accés a la xarxa, ni compte, ni rastreig. Els teus temporitzadors i els seus noms es queden al teu Mac. La <a href="privacy.html">política de privadesa</a> completa diu el mateix amb més detall.</p>

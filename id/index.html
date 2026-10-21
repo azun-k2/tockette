@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Satu tarikan dari menu bar · Lonceng lembut bawaan</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">Timer, cukup sekali seret dari bar menu.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="Demo interaktif: hitung mundur melingkar dan pilihan preset">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">Sesi Fokus</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">Mulai Timer</button>
+      <button id="tkResetBtn" class="app-chip">Atur Ulang</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="Sesi Fokus">🍅 25m Fokus</button>
+      <button class="app-chip" data-m="5" data-l="Istirahat Sejenak">☕ 5m Rehat</button>
+      <button class="app-chip" data-m="3" data-l="Seduh Teh">🫖 3m Teh</button>
+    </div>
+    <span class="demo-hint">💡 Klik Mulai Timer untuk melihat animasi lingkaran atau pilih preset</span>
+  </div>
+  <p class="demo-note">Simulasi visual. Di aplikasi Mac, Anda cukup menarik ke bawah dari menu bar untuk menyetel timer dalam satu detik.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "Jeda";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "Selesai!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "Mulai Timer";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "Mulai Timer"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">Memerlukan macOS 14 Sonoma atau lebih baru.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Aplikasi timer rumit vs Tockette</h2>
+  <p class="section-lead">Nyalakan timer dalam waktu kurang dari dua detik tanpa memecah konsentrasi Anda.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspek</th>
+          <th>Aplikasi Konvensional</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Menyetel Waktu</strong></td>
+          <td>Membuka jendela besar, menekan panah kecil dan menu rumit</td>
+          <td class="highlight-col"><strong>Satu tarikan mulus ke bawah langsung dari menu bar</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Pantauan Cepat</strong></td>
+          <td>Tersembunyi di Dock atau memenuhi layar monitor Anda</td>
+          <td class="highlight-col"><strong>Indikator lingkaran kecil yang rapi di menu bar</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Suara Alarm</strong></td>
+          <td>Suara alarm nyaring mengejutkan yang mengganggu panggilan</td>
+          <td class="highlight-col"><strong>Lonceng harmonis yang lembut memberi tahu tanpa rasa kaget</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Input Alami</strong></td>
+          <td>Formulir kaku jam, menit, dan detik yang lambat</td>
+          <td class="highlight-col"><strong>Ketik kalimat wajar seperti '25 teh' atau '15 cuci baju'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Keringanan</strong></td>
+          <td>Aplikasi berat memakan ratusan megabita memori RAM</td>
+          <td class="highlight-col"><strong>Aplikasi Swift asli untuk macOS: instan dan sangat hemat daya</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Privasi dalam satu paragraf</h2>
   <p>Tockette tidak punya akses jaringan, akun, maupun pelacakan. Timer Anda dan namanya tetap di Mac Anda. <a href="privacy.html">Kebijakan privasi</a> lengkapnya menyatakan hal yang sama secara lebih rinci.</p>

@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Un arrastre desde la barra de menús · Suave timbre nativo</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">Un temporizador a un gesto de la barra de menús.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="Demostración interactiva: cuenta atrás circular y selección de tiempo">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">Sesión de enfoque</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">Iniciar temporizador</button>
+      <button id="tkResetBtn" class="app-chip">Restablecer</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="Sesión de enfoque">🍅 25m Enfoque</button>
+      <button class="app-chip" data-m="5" data-l="Pausa corta">☕ 5m Descanso</button>
+      <button class="app-chip" data-m="3" data-l="Preparar té">🫖 3m Té</button>
+    </div>
+    <span class="demo-hint">💡 Haz clic en Iniciar para ver el anillo o elige un ajuste rápido</span>
+  </div>
+  <p class="demo-note">Simulación visual. En la app para Mac, arrastras directamente hacia abajo desde la barra de menús para poner un temporizador al instante.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "Pausar";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "¡Listo!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "Iniciar temporizador";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "Iniciar temporizador"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">Requiere macOS 14 Sonoma o posterior.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Apps de temporizador pesadas frente a Tockette</h2>
+  <p class="section-lead">Pon un temporizador en menos de dos segundos sin romper tu concentración.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspecto</th>
+          <th>Apps tradicionales</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Ajustar tiempo</strong></td>
+          <td>Abrir ventanas grandes, pulsar flechitas y desplegables</td>
+          <td class="highlight-col"><strong>Un solo gesto fluido hacia abajo desde la barra de menús</strong></td>
+        </tr>
+        <tr>
+          <td><strong>De un vistazo</strong></td>
+          <td>Oculto en el Dock o estorbando en medio del escritorio</td>
+          <td class="highlight-col"><strong>Discreto anillo circular visible en la barra de menús</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Sonido de alarma</strong></td>
+          <td>Alarmas estridentes que asustan e interrumpen llamadas</td>
+          <td class="highlight-col"><strong>Suave campana armónica sintetizada que avisa sin sobresaltos</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Texto natural</strong></td>
+          <td>Formularios rígidos de horas, minutos y segundos</td>
+          <td class="highlight-col"><strong>Escribe órdenes sencillas como '25 té' o '15 lavadora'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Recursos</strong></td>
+          <td>Pesados frameworks web que consumen cientos de megabytes</td>
+          <td class="highlight-col"><strong>Desarrollo nativo puro en Swift para macOS: ágil y diminuto</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>La privacidad en un párrafo</h2>
   <p>Tockette no tiene acceso a la red, ni cuenta, ni rastreo. Tus temporizadores y sus nombres se quedan en tu Mac. La <a href="privacy.html">política de privacidad</a> completa dice lo mismo con más detalle.</p>

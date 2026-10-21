@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ 메뉴 막대에서 아래로 한 번 드래그 · 은은한 알림 차임벨</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">메뉴 막대에서 한 번 끌면 시작되는 타이머.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="인터랙티브 데모: 원형 타이머 카운트다운 및 프리셋 선택">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">집중 세션</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">타이머 시작</button>
+      <button id="tkResetBtn" class="app-chip">재설정</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="집중 세션">🍅 25분 집중</button>
+      <button class="app-chip" data-m="5" data-l="짧은 휴식">☕ 5분 휴식</button>
+      <button class="app-chip" data-m="3" data-l="차 우리기">🫖 3분 차</button>
+    </div>
+    <span class="demo-hint">💡 시작을 눌러 원형 카운트다운을 보거나 프리셋을 선택하세요</span>
+  </div>
+  <p class="demo-note">시각적 시뮬레이션입니다. Mac 앱에서는 메뉴 막대에서 아래로 가볍게 끌어내려 단 1초 만에 타이머를 맞출 수 있습니다.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "일시 정지";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "완료!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "타이머 시작";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "타이머 시작"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">macOS 14 Sonoma 이상이 필요합니다.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>복잡한 타이머 앱과 Tockette 비교</h2>
+  <p class="section-lead">작업 흐름을 끊지 않고 2초 안에 타이머를 직관적으로 시작하세요.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>항목</th>
+          <th>일반 타이머 앱</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>시간 설정</strong></td>
+          <td>커다란 창을 열고 작은 화살표 버튼과 메뉴를 번거롭게 클릭</td>
+          <td class="highlight-col"><strong>메뉴 막대 아이콘에서 아래로 부드럽게 당기는 단 한 번의 드래그</strong></td>
+        </tr>
+        <tr>
+          <td><strong>진행률 확인</strong></td>
+          <td>Dock 속에 숨겨져 있거나 모니터 화면 공간을 크게 차지함</td>
+          <td class="highlight-col"><strong>메뉴 막대 안에서 은은하게 줄어드는 컴팩트한 원형 조각</strong></td>
+        </tr>
+        <tr>
+          <td><strong>알림 소리</strong></td>
+          <td>깜짝 놀라게 만들고 회의 통화를 방해하는 날카로운 기계음</td>
+          <td class="highlight-col"><strong>놀라지 않고 평온하게 알려주는 부드러운 화음 차임벨</strong></td>
+        </tr>
+        <tr>
+          <td><strong>자연어 입력</strong></td>
+          <td>시·분·초를 일일이 지정해야 하는 경직된 입력 양식</td>
+          <td class="highlight-col"><strong>'25 차' 또는 '15 빨래'처럼 입력하는 직관적인 자연어 지원</strong></td>
+        </tr>
+        <tr>
+          <td><strong>시스템 자원</strong></td>
+          <td>수백 메가바이트의 메모리를 소모하는 무거운 프레임워크</td>
+          <td class="highlight-col"><strong>순수 Swift 기반의 가벼운 macOS 네이티브 앱: 즉각 반응</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>한 문단으로 보는 개인정보 보호</h2>
   <p>Tockette는 네트워크에 접근하지 않으며, 계정도 추적도 없습니다. 타이머와 그 이름은 사용자의 Mac에만 남습니다. 전체 <a href="privacy.html">개인정보 처리방침</a>에도 같은 내용이 더 자세히 나와 있습니다.</p>

@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ Yksi veto valikkoriviltä · Lempeä natiivi kelloääni</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">Ajastin yhden vedon päässä valikkorivistä.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="Interaktiivinen demo: pyöreä ajastin ja esiasetukset">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">Keskittymisjakso</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">Käynnistä ajastin</button>
+      <button id="tkResetBtn" class="app-chip">Nollaa</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="Keskittymisjakso">🍅 25m Keskittyminen</button>
+      <button class="app-chip" data-m="5" data-l="Lyhyt tauko">☕ 5m Tauko</button>
+      <button class="app-chip" data-m="3" data-l="Tee valmis">🫖 3m Tee</button>
+    </div>
+    <span class="demo-hint">💡 Napsauta Käynnistä nähdäksesi renkaan tai valitse esiasetus</span>
+  </div>
+  <p class="demo-note">Visuaalinen simulaatio. Mac-sovelluksessa vedät vain suoraan valikkoriviltä asettaaksesi ajastimen sekunnissa.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "Tauko";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "Valmis!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "Käynnistä ajastin";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "Käynnistä ajastin"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">Vaatii macOS 14 Sonoman tai uudemman.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Kankeat ajastinsovellukset verrattuna Tocketteen</h2>
+  <p class="section-lead">Aseta ajastin alle kahdessa sekunnissa työnkulkua katkaisematta.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Ominaisuus</th>
+          <th>Perinteiset ajastimet</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Ajan asettaminen</strong></td>
+          <td>Suurten ikkunoiden avaaminen ja pienten nuolien klikkailu</td>
+          <td class="highlight-col"><strong>Yksi sujuva veto suoraan alas valikkoriviltä</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Silmäys tilanteeseen</strong></td>
+          <td>Piilossa Dockissa tai tilaa viemässä työpöydällä</td>
+          <td class="highlight-col"><strong>Huomaamaton pyöreä rengas suoraan valikkorivillä</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Hälytysääni</strong></td>
+          <td>Kimeät hälytykset jotka säikäyttävät ja häiritsevät puheluita</td>
+          <td class="highlight-col"><strong>Lempeä harmoninen kellonsoitto joka ilmoittaa sävyisästi</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Luonnollinen syöttö</strong></td>
+          <td>Jäykät tunti-, minuutti- ja sekuntikentät</td>
+          <td class="highlight-col"><strong>Kirjoita suoraan kuten '25 tee' tai '15 pyykit'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Resurssit</strong></td>
+          <td>Raskaat sovellusalustat jotka vievät satoja megatavuja</td>
+          <td class="highlight-col"><strong>Puhdas natiivi Swift macOS -toteutus: käynnistyy heti</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Tietosuoja yhdessä kappaleessa</h2>
   <p>Tockettella ei ole verkkoyhteyttä, tiliä eikä seurantaa. Ajastimesi ja niiden nimet pysyvät Macillasi. Koko <a href="privacy.html">tietosuojakäytäntö</a> kertoo saman laajemmin.</p>

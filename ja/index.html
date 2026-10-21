@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ メニューバーから下へ引くだけ · 心地よい自然なチャイム音</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">メニューバーからドラッグするだけのタイマー。</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="インタラクティブデモ：円形タイマーカウントダウンとプリセット選択">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">集中セッション</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">タイマー開始</button>
+      <button id="tkResetBtn" class="app-chip">リセット</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="集中セッション">🍅 25分 集中</button>
+      <button class="app-chip" data-m="5" data-l="小休憩">☕ 5分 休憩</button>
+      <button class="app-chip" data-m="3" data-l="紅茶の抽出">🫖 3分 紅茶</button>
+    </div>
+    <span class="demo-hint">💡 開始をクリックして円形カウントダウンを確認するか、プリセットを選択</span>
+  </div>
+  <p class="demo-note">視覚的シミュレーションです。Macアプリではメニューバーからサッと下にドラッグするだけで、1秒でタイマーをセットできます。</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "一時停止";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "完了！"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "タイマー開始";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "タイマー開始"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">macOS 14 Sonoma 以降が必要です。</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>面倒なタイマーアプリとTocketteの比較</h2>
+  <p class="section-lead">思考の流れを一切止めることなく、2秒未満でスマートにタイマーを起動。</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>項目</th>
+          <th>一般的なタイマー</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>設定の手間</strong></td>
+          <td>大きなウィンドウを開き、細かな矢印やドロップダウンをポチポチ操作</td>
+          <td class="highlight-col"><strong>メニューバーから下へスッと1回ドラッグするだけの直感操作</strong></td>
+        </tr>
+        <tr>
+          <td><strong>残り時間の確認</strong></td>
+          <td>Dockに隠れて見えないか、画面の中央を占領して作業を邪魔する</td>
+          <td class="highlight-col"><strong>メニューバー内に控えめな円形パイチャートで常に進行状況を把握</strong></td>
+        </tr>
+        <tr>
+          <td><strong>アラーム音</strong></td>
+          <td>突然けたたましく鳴り響き、自分も周囲の通話相手も驚かせるブザー</td>
+          <td class="highlight-col"><strong>耳に優しく響き渡り、決して驚かせない調和のとれた合奏チャイム</strong></td>
+        </tr>
+        <tr>
+          <td><strong>クイック入力</strong></td>
+          <td>時・分・秒を個別の数字入力欄に手入力する不便なUI</td>
+          <td class="highlight-col"><strong>「25 紅茶」「15 洗濯」と打つだけの自然言語クイック入力</strong></td>
+        </tr>
+        <tr>
+          <td><strong>動作の軽快さ</strong></td>
+          <td>数百メガバイトのメモリを無駄食いする重いWebフレームワーク</td>
+          <td class="highlight-col"><strong>完全なmacOSネイティブSwift実装：起動は一瞬で極めて省メモリ</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>プライバシーをひとことで</h2>
   <p>Tockette はネットワークにアクセスせず、アカウントもトラッキングもありません。タイマーとその名前は、あなたの Mac から出ません。詳しくは<a href="privacy.html">プライバシーポリシー</a>に同じ内容をより詳しく書いています。</p>

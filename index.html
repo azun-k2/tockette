@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ One drag down from the menu bar · Gentle native chime</div>
   <img class="icon" src="icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">A timer, one drag from the menu bar.</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="Interactive demo: circular timer countdown and preset selection">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">Focus Session</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">Start Timer</button>
+      <button id="tkResetBtn" class="app-chip">Reset</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="Focus Session">🍅 25m Focus</button>
+      <button class="app-chip" data-m="5" data-l="Short Break">☕ 5m Rest</button>
+      <button class="app-chip" data-m="3" data-l="Steep Tea">🫖 3m Tea</button>
+    </div>
+    <span class="demo-hint">💡 Click Start Timer to watch the countdown ring, or pick a preset</span>
+  </div>
+  <p class="demo-note">Visual simulation. In the Mac app, you pull down directly from the menu bar to set instant timers with gentle chimes.</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "Pause";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "Done!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "Start Timer";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "Start Timer"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">Requires macOS 14 Sonoma or later.</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>Clunky timer apps vs Tockette</h2>
+  <p class="section-lead">Start a timer in under two seconds without disrupting your flow.</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>Aspect</th>
+          <th>Generic Timer Apps</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Setting Time</strong></td>
+          <td>Opening large windows, clicking tiny arrows and popups</td>
+          <td class="highlight-col"><strong>A single fluid drag down directly from the menu bar</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Visual Glance</strong></td>
+          <td>Hidden in the Dock or cluttering desktop space</td>
+          <td class="highlight-col"><strong>Discrete circular countdown slice right in the menu bar</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Alarm Sound</strong></td>
+          <td>Harsh jarring buzzer that startles you and your calls</td>
+          <td class="highlight-col"><strong>Gentle harmonic synthesized chime that never startles</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Natural Entry</strong></td>
+          <td>Rigid hour:min:sec spinners and complicated forms</td>
+          <td class="highlight-col"><strong>Type natural labels like '25 tea' or '15 laundry'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>Resource Use</strong></td>
+          <td>Heavy multi-megabyte frameworks and sluggish startup</td>
+          <td class="highlight-col"><strong>Pure Swift native macOS footprint: instant and tiny</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>Privacy in one paragraph</h2>
   <p>Tockette has no network access, no account and no tracking. Your timers and their names stay on your Mac. The full <a href="privacy.html">privacy policy</a> says the same at more length.</p>

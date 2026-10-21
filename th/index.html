@@ -52,6 +52,7 @@
 <body>
 <main>
 <div class="hero">
+  <div class="hero-pill">⚡ ลากลงจากแถบเมนูเพียงครั้งเดียว · เสียงกระดิ่งนุ่มนวลฟังสบาย</div>
   <img class="icon" src="../icon-512.png" alt="" width="112" height="112">
   <h1>Tockette</h1>
   <p class="tagline">ตัวจับเวลาที่ลากครั้งเดียวจากแถบเมนู</p>
@@ -106,6 +107,90 @@
   </details><!-- /family:nav -->
   </nav>
 </div>
+<div class="demo-wrapper" id="demo">
+  <div class="tockette-stage" role="group" aria-label="การสาธิตแบบอินเทอร์แอคทีฟ: ตัวนับเวลาถอยหลังแบบวงกลมและเวลาด่วน">
+    <div class="tockette-circle-wrap">
+      <svg class="tockette-svg" width="190" height="190" viewBox="0 0 190 190">
+        <circle class="tockette-bg-circle" cx="95" cy="95" r="85"></circle>
+        <circle id="tkCircle" class="tockette-bar-circle" cx="95" cy="95" r="85"></circle>
+      </svg>
+      <div class="tockette-display">
+        <div class="tockette-time" id="tkTime">25:00</div>
+        <div class="tockette-label" id="tkLabel">ช่วงเวลาโฟกัส</div>
+      </div>
+    </div>
+    <div class="demo-controls">
+      <button id="tkToggleBtn" class="tockette-action-btn">เริ่มจับเวลา</button>
+      <button id="tkResetBtn" class="app-chip">รีเซ็ต</button>
+    </div>
+    <div class="demo-controls">
+      <button class="app-chip active" data-m="25" data-l="ช่วงเวลาโฟกัส">🍅 25 นาที โฟกัส</button>
+      <button class="app-chip" data-m="5" data-l="พักสายตาสั้นๆ">☕ 5 นาที พักผ่อน</button>
+      <button class="app-chip" data-m="3" data-l="ชงชา">🫖 3 นาที ชงชา</button>
+    </div>
+    <span class="demo-hint">💡 คลิกเริ่มจับเวลาเพื่อดูวงกลมถอยหลังหรือเลือกเวลาสำเร็จรูป</span>
+  </div>
+  <p class="demo-note">การจำลองภาพ ในแอป Mac จริงคุณเพียงแค่ลากลงมาจากแถบเมนูเพื่อตั้งเวลาได้ทันทีใน 1 วินาที</p>
+</div>
+<script>
+(function () {
+  var tSec = 25 * 60, totSec = 25 * 60, running = false, timer = null, audioCtx = null;
+  var timeEl = document.getElementById('tkTime'), circle = document.getElementById('tkCircle');
+  var labelEl = document.getElementById('tkLabel'), btn = document.getElementById('tkToggleBtn');
+  var resetBtn = document.getElementById('tkResetBtn');
+  var circum = 534;
+  function update() {
+    var m = Math.floor(tSec / 60), s = tSec % 60;
+    timeEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    var off = circum - (tSec / totSec) * circum;
+    circle.style.strokeDashoffset = off;
+  }
+  function chime() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      var now = audioCtx.currentTime;
+      [523.25, 659.25, 783.99, 1046.5].forEach(function(f, i) {
+        var o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.18, now + i * 0.12);
+        g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.12 + 1.2);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(now + i * 0.12); o.stop(now + i * 0.12 + 1.2);
+      });
+    } catch(e) {}
+  }
+  function toggle() {
+    if (!running) {
+      running = true; btn.textContent = "พักชั่วคราว";
+      timer = setInterval(function() {
+        if (tSec > 0) { tSec--; update(); }
+        else {
+          clearInterval(timer); running = false;
+          btn.textContent = "เสร็จสิ้น!"; chime();
+        }
+      }, 1000);
+    } else {
+      running = false; clearInterval(timer);
+      btn.textContent = "เริ่มจับเวลา";
+    }
+  }
+  function reset() {
+    clearInterval(timer); running = false; tSec = totSec;
+    btn.textContent = "เริ่มจับเวลา"; update();
+  }
+  btn.addEventListener('click', toggle);
+  resetBtn.addEventListener('click', reset);
+  document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(b) {
+    b.addEventListener('click', function() {
+      document.querySelectorAll('.tockette-stage .demo-controls button[data-m]').forEach(function(x) { x.classList.remove('active'); });
+      b.classList.add('active'); totSec = (+b.dataset.m) * 60; tSec = totSec;
+      labelEl.textContent = b.dataset.l; reset();
+    });
+  });
+  update();
+})();
+</script>
 
 <!-- family:shot --><figure class="shot"><img src="../img/hero.jpg" alt="" width="1600" height="860"></figure><!-- /family:shot -->
 <section class="card">
@@ -121,6 +206,48 @@
   <p class="note">ต้องใช้ macOS 14 Sonoma ขึ้นไป</p>
 </section>
 
+<section class="card comparison-card" id="comparison">
+  <h2>แอปตั้งเวลาที่เทอะทะเทียบกับ Tockette</h2>
+  <p class="section-lead">เริ่มจับเวลาได้ในเวลาไม่ถึงสองวินาทีโดยไม่รบกวนสมาธิในการทำงานของคุณ</p>
+  <div class="table-scroll">
+    <table class="comp-table">
+      <thead>
+        <tr>
+          <th>คุณสมบัติ</th>
+          <th>แอปจับเวลาทั่วไป</th>
+          <th class="highlight-col">Tockette</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>การตั้งเวลา</strong></td>
+          <td>ต้องเปิดหน้าต่างใหญ่ คลิกปุ่มลูกศรเล็กๆ และเมนูซับซ้อน</td>
+          <td class="highlight-col"><strong>ลากลงมาจากแถบเมนูโดยตรงเพียงจังหวะเดียวอย่างลื่นไหล</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ดูเวลาได้รวดเร็ว</strong></td>
+          <td>ซ่อนอยู่ใน Dock หรือเกะกะกินพื้นที่หน้าจอเดสก์ท็อป</td>
+          <td class="highlight-col"><strong>วงแหวนความคืบหน้าขนาดกะทัดรัดบนแถบเมนูมองเห็นได้ทันที</strong></td>
+        </tr>
+        <tr>
+          <td><strong>เสียงแจ้งเตือน</strong></td>
+          <td>เสียงกริ่งแหลมแสบแก้วหูที่ทำให้ตกใจและรบกวนการโทร</td>
+          <td class="highlight-col"><strong>เสียงระฆังประสานที่นุ่มนวล แจ้งเตือนอย่างสุภาพไม่ตกใจ</strong></td>
+        </tr>
+        <tr>
+          <td><strong>พิมพ์คำสั่งง่ายๆ</strong></td>
+          <td>แบบฟอร์มชั่วโมง นาที วินาที ที่แข็งกระด้างใช้งานยาก</td>
+          <td class="highlight-col"><strong>พิมพ์คำสั่งภาษาธรรมชาติเช่น '25 ชงชา' หรือ '15 ซักผ้า'</strong></td>
+        </tr>
+        <tr>
+          <td><strong>ความเบาของระบบ</strong></td>
+          <td>เฟรมเวิร์กขนาดใหญ่ที่กินแรมคอมพิวเตอร์หลายร้อยเมกะไบต์</td>
+          <td class="highlight-col"><strong>พัฒนาด้วย Swift เนทีฟสำหรับ macOS แท้ๆ: เบาและเร็วทันที</strong></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 <section class="card">
   <h2>ความเป็นส่วนตัวในย่อหน้าเดียว</h2>
   <p>Tockette ไม่มีการเข้าถึงเครือข่าย ไม่มีบัญชี และไม่มีการติดตาม ตัวจับเวลาและชื่อของมันอยู่บน Mac ของคุณเท่านั้น <a href="privacy.html">นโยบายความเป็นส่วนตัว</a>ฉบับเต็มก็กล่าวไว้เช่นเดียวกัน แต่ละเอียดกว่า</p>
